@@ -8,7 +8,7 @@ mizumi_program = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/Users/applejeewce/.config/solana/id.json"
 
 [scripts]
