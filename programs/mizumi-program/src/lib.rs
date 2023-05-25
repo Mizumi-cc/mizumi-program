@@ -6,7 +6,7 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount}
 };
-declare_id!("GMoknzmqPt9ySN7kinESNqS7zMdw5GSDMRqt9EKUzw55");
+declare_id!("6pm1yXLY9AHUSwQmsK481YJaKgfChgjCkzvXQoZsRUg");
 
 #[program]
 pub mod mizumi_program {
@@ -27,26 +27,23 @@ pub mod mizumi_program {
         Ok(())
     }
 
-    pub fn first_swap(ctx: Context<FirstSwap>, _new_swap_count: String) -> Result<()> {
+    pub fn first_swap(ctx: Context<FirstSwap>, _swap_id: String) -> Result<()> {
         if ctx.accounts.user_account.swaps_count > 0 {
             return Err(ProgramError::InvalidInstructionData.into());
         }
 
         // initialize the first swap account for a new user
         ctx.accounts.swap_account.authority = *ctx.accounts.authority.key;
-        ctx.accounts.user_account.swaps_count += 1;
+        ctx.accounts.user_account.swaps_count = 1;
 
         Ok(())
     }
 
-    pub fn new_swap(ctx: Context<NewSwap>, _new_swap_count: String) -> Result<()> {
+    pub fn new_swap(ctx: Context<NewSwap>, _swap_id: String) -> Result<()> {
         if ctx.accounts.admin.key() != constants::ADMIN_PUBKEY {
             return Err(ProgramError::InvalidInstructionData.into());
         }
 
-        if !ctx.accounts.current_swap_account.settled {
-            return  Err(ProgramError::InvalidInstructionData.into());
-        }
         // initialize a swap account
         ctx.accounts.new_swap_account.authority = *ctx.accounts.authority.key;
         ctx.accounts.user_account.swaps_count += 1;
@@ -60,7 +57,7 @@ pub mod mizumi_program {
         amount: u64, 
         fiat: MizumiFiat, 
         tx_kind: TransactionKind,
-        _swap_count: String,
+        _swap_id: String,
     ) -> Result<()> {
         if ctx.accounts.admin.key() != constants::ADMIN_PUBKEY {
             return Err(ProgramError::InvalidInstructionData.into());
@@ -158,7 +155,7 @@ pub mod mizumi_program {
         ctx: Context<CompleteSwap>,
         settled: bool,
         settled_amount: u64,
-        _swap_count: String
+        _swap_id: String
     ) -> Result<()> {
         if ctx.accounts.admin.key() != constants::ADMIN_PUBKEY {
             return Err(ProgramError::InvalidInstructionData.into());
@@ -266,7 +263,7 @@ pub struct NewUser<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(new_swap_count: String)]
+#[instruction(swap_id: String)]
 pub struct FirstSwap<'info> {
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(signer)]
@@ -285,7 +282,7 @@ pub struct FirstSwap<'info> {
         init,
         payer = authority,
         space = 8 + 32 + 1 + 1 + 1 + 8 + 1 + 1 + 1 + 1 + 8 + 8 + 8 + 1, 
-        seeds = [b"swap-account", authority.key().as_ref(), new_swap_count.as_ref()], 
+        seeds = [b"swap-account", authority.key().as_ref(), swap_id.as_ref()], 
         bump
     )]
     pub swap_account: Account<'info, SwapAccount>,
@@ -293,7 +290,7 @@ pub struct FirstSwap<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(new_swap_count: String)]
+#[instruction(swap_id: String)]
 pub struct NewSwap<'info> {
     #[account(signer)]
     /// CHECK: This is not dangerous because we don't read or write from this account
@@ -312,21 +309,15 @@ pub struct NewSwap<'info> {
         init,
         payer = authority,
         space = 8 + 32 + 1 + 1 + 1 + 8 + 1 + 1 + 1 + 1 + 8 + 8 + 8 + 1, 
-        seeds = [b"swap-account", authority.key().as_ref(), new_swap_count.as_ref()], 
+        seeds = [b"swap-account", authority.key().as_ref(), swap_id.as_ref()], 
         bump
     )]
     pub new_swap_account: Account<'info, SwapAccount>,
-    #[account(
-        mut,
-        seeds = [b"swap-account", authority.key().as_ref(), (user_account.swaps_count).to_string().as_ref()],
-        bump,
-    )]
-    pub current_swap_account: Account<'info, SwapAccount>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
-#[instruction(token: MizumiStable, amount: u64, fiat: MizumiFiat, tx_kind: TransactionKind, swap_count: String)]
+#[instruction(token: MizumiStable, amount: u64, fiat: MizumiFiat, tx_kind: TransactionKind, swap_id: String)]
 pub struct Swap<'info> {
     #[account(signer)]
     /// CHECK: This is not dangerous because we don't read or write from this account
@@ -347,7 +338,7 @@ pub struct Swap<'info> {
     pub user_account: Box<Account<'info, UserAccount>>,
     #[account(
         mut, 
-        seeds = [b"swap-account", authority.key().as_ref(), swap_count.as_ref()], 
+        seeds = [b"swap-account", authority.key().as_ref(), swap_id.as_ref()], 
         bump,
         has_one = authority
     )]
@@ -375,7 +366,7 @@ pub struct Swap<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(settled: bool, settled_amount: u64, swap_count: String)]
+#[instruction(settled: bool, settled_amount: u64, swap_id: String)]
 pub struct CompleteSwap<'info> {
     #[account(signer)]
     /// CHECK: This is not dangerous because we don't read or write from this account
@@ -385,7 +376,7 @@ pub struct CompleteSwap<'info> {
     pub authority: AccountInfo<'info>,
     #[account(
         mut,
-        seeds = [b"swap-account", authority.key().as_ref(), swap_count.as_ref()],
+        seeds = [b"swap-account", authority.key().as_ref(), swap_id.as_ref()],
         bump,
         has_one = authority
     )]
