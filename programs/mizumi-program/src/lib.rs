@@ -27,18 +27,6 @@ pub mod mizumi_program {
         Ok(())
     }
 
-    pub fn first_swap(ctx: Context<FirstSwap>, _swap_id: String) -> Result<()> {
-        if ctx.accounts.user_account.swaps_count > 0 {
-            return Err(ProgramError::InvalidInstructionData.into());
-        }
-
-        // initialize the first swap account for a new user
-        ctx.accounts.swap_account.authority = *ctx.accounts.authority.key;
-        ctx.accounts.user_account.swaps_count = 1;
-
-        Ok(())
-    }
-
     pub fn new_swap(ctx: Context<NewSwap>, _swap_id: String) -> Result<()> {
         if ctx.accounts.admin.key() != constants::ADMIN_PUBKEY {
             return Err(ProgramError::InvalidInstructionData.into());
@@ -259,33 +247,6 @@ pub struct NewUser<'info> {
         bump
     )]
     pub user_account: Account<'info, UserAccount>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-#[instruction(swap_id: String)]
-pub struct FirstSwap<'info> {
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(signer)]
-    pub admin: AccountInfo<'info>,
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(signer, mut)]
-    pub authority: AccountInfo<'info>,
-    #[account(
-        mut,
-        seeds = [b"user-account", authority.key().as_ref()],
-        bump,
-        has_one = authority
-    )]
-    pub user_account: Account<'info, UserAccount>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + 32 + 1 + 1 + 1 + 8 + 1 + 1 + 1 + 1 + 8 + 8 + 8 + 1, 
-        seeds = [b"swap-account", authority.key().as_ref(), swap_id.as_ref()], 
-        bump
-    )]
-    pub swap_account: Account<'info, SwapAccount>,
     pub system_program: Program<'info, System>,
 }
 
