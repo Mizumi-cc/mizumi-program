@@ -1,5 +1,7 @@
 mod constants;
 
+use std::fmt;
+
 use anchor_lang::prelude::*;
 use anchor_spl::{
     token,
@@ -10,6 +12,8 @@ declare_id!("6pm1yXLY9AHUSwQmsK481YJaKgfChgjCkzvXQoZsRUg");
 
 #[program]
 pub mod mizumi_program {
+    use anchor_lang::solana_program::log::sol_log;
+
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
@@ -76,6 +80,7 @@ pub mod mizumi_program {
         ];
         let usdt_signer = [&usdt_seeds[..]];
 
+        sol_log(token.to_string().as_str());
         // transfer token from sender -> PDA vault
         match token {
             MizumiStable::USDC => {
@@ -162,6 +167,15 @@ pub mod mizumi_program {
 pub enum MizumiStable {
     USDC,
     USDT
+}
+
+impl fmt::Display for MizumiStable {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            MizumiStable::USDC => write!(f, "USDC"),
+            MizumiStable::USDT => write!(f, "USDT"),
+        }
+    }
 }
 
 // supported Fiat currencies
