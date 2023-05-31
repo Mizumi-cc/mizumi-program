@@ -172,14 +172,6 @@ describe("mizumi-program", () => {
     const swaps_count = (await program.account.userAccount.fetch(user_acc_pda)).swapsCount
     const new_swaps_count = swaps_count.add(new anchor.BN(1))
 
-    const [current_swap_acc_pda, hb] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("swap-account"),
-        provider.wallet.publicKey.toBuffer(),
-        Buffer.from(`${swaps_count.toNumber()}`)
-      ],
-      program.programId
-    )
     const [swap_acc_pda, sb] = PublicKey.findProgramAddressSync(
       [
         Buffer.from("swap-account"),
@@ -197,7 +189,6 @@ describe("mizumi-program", () => {
       .accounts({
         admin: admin.publicKey,
         userAccount: user_acc_pda,
-        currentSwapAccount: current_swap_acc_pda,
         newSwapAccount: swap_acc_pda,
         authority: provider.wallet.publicKey,
         systemProgram: SystemProgram.programId,
