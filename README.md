@@ -8,4 +8,6 @@ Deploy to devnet with the command:
 
 Run tests with the command: 
 `anchor test`
-before running tests mint USDC and USDT tokens for initializing program
+
+## Important
+Before running tests mint USDC and USDT tokens for initializing program
